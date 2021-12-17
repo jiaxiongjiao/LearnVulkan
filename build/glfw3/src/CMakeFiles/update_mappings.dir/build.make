@@ -44,10 +44,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /usr/local/Cellar/cmake/3.22.0/bin/cmake
+CMAKE_COMMAND = /usr/local/Cellar/cmake/3.22.1/bin/cmake
 
 # The command to remove a file.
-RM = /usr/local/Cellar/cmake/3.22.0/bin/cmake -E rm -f
+RM = /usr/local/Cellar/cmake/3.22.1/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -68,7 +68,7 @@ include glfw3/src/CMakeFiles/update_mappings.dir/progress.make
 
 glfw3/src/CMakeFiles/update_mappings:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/Users/jiaxiongjiao/LearnVulkan/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Updating gamepad mappings from upstream repository"
-	cd /Users/jiaxiongjiao/LearnVulkan/glfw3/src && /usr/local/Cellar/cmake/3.22.0/bin/cmake -P /Users/jiaxiongjiao/LearnVulkan/glfw3/CMake/GenerateMappings.cmake mappings.h.in mappings.h
+	cd /Users/jiaxiongjiao/LearnVulkan/glfw3/src && /usr/local/Cellar/cmake/3.22.1/bin/cmake -P /Users/jiaxiongjiao/LearnVulkan/glfw3/CMake/GenerateMappings.cmake mappings.h.in mappings.h
 
 update_mappings: glfw3/src/CMakeFiles/update_mappings
 update_mappings: glfw3/src/CMakeFiles/update_mappings.dir/build.make

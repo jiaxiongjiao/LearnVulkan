@@ -68,7 +68,6 @@ public:
 
         createSemaphores();
 
-
         // Running phase
         vulkanProgramLoop();
 
@@ -139,7 +138,7 @@ private:
         VkShaderModule fragShaderModule = VK_NULL_HANDLE;
 
 		VkRenderPass renderPass = VK_NULL_HANDLE;
-		
+
         // Pipeline layout
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 		VkPipeline graphicsPipeline{};
@@ -147,6 +146,7 @@ private:
 
         VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
         VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+        VkQueue presentAndGraphicsQueue = VK_NULL_HANDLE;
 
     } vulkanProgramInfo;
 
@@ -192,8 +192,9 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            // drawFrame();
+            drawFrame();
         }
+        vkDeviceWaitIdle(vulkanProgramInfo.GPUDevice);
     }
 
     void createSemaphores()
@@ -246,7 +247,36 @@ private:
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &vulkanProgramInfo.cmdBuffers[imageIndex];
 
+        VkSemaphore signalSemaphores[] = {vulkanProgramInfo.renderFinishedSemaphore};
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        vkGetDeviceQueue(vulkanProgramInfo.GPUDevice,
+                         vulkanProgramInfo.graphicsQueueFamilyIndex,
+                         0,
+                         &vulkanProgramInfo.presentAndGraphicsQueue);
+
+        vkResult = vkQueueSubmit(vulkanProgramInfo.presentAndGraphicsQueue,
+                                 1,
+                                 &submitInfo,
+                                 VK_NULL_HANDLE);
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapchains[] = {vulkanProgramInfo.vulkanSwapchain};
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pImageIndices = &imageIndex;
+
+        vkQueuePresentKHR(vulkanProgramInfo.presentAndGraphicsQueue, &presentInfo);
+        vkQueueWaitIdle(vulkanProgramInfo.presentAndGraphicsQueue);
     }
 
     /**
@@ -276,8 +306,10 @@ private:
 
         swapchainCreateInfo.imageFormat = surfaceFormats[0].format;
         swapchainCreateInfo.imageColorSpace = surfaceFormats[0].colorSpace;
+        std::cout << surfaceFormats[0].colorSpace << std::endl;
+        std::cout << surfaceFormats[0].format << std::endl;
 
-        // Record swacphain format for later use in render pipeline
+        // Record swapchain format for later use in render pipeline
         vulkanProgramInfo.vulkanSwapchainFormat = swapchainCreateInfo.imageFormat;
         // ------------------------------------------
         // Query for surface capabilities
@@ -595,6 +627,7 @@ private:
             {
                 graphicsQueueFamilyIndex = queueFamilyIndex;
                 foundQueue = true;
+                break;
             }
         }
 
@@ -657,6 +690,7 @@ private:
                                   &deviceCreateInfo,
                                   nullptr,
                                   &vulkanProgramInfo.GPUDevice);
+
 
         if (vkResult != VK_SUCCESS)
         {
@@ -883,7 +917,7 @@ private:
 		graphicsPipelineCreateInfo.layout = vulkanProgramInfo.pipelineLayout;
 		graphicsPipelineCreateInfo.renderPass = vulkanProgramInfo.renderPass;
 		graphicsPipelineCreateInfo.subpass = 0;
-		
+
 		vkResult = vkCreateGraphicsPipelines(vulkanProgramInfo.GPUDevice,
 											 VK_NULL_HANDLE,
 											 1,
@@ -933,12 +967,22 @@ private:
 		subpassDescription.colorAttachmentCount = 1;
 		subpassDescription.pColorAttachments = &colorAttachmentRef;
 
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassCreateInfo{};
 		renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassCreateInfo.attachmentCount = 1;
 		renderPassCreateInfo.pAttachments = &attachmentDescription;
 		renderPassCreateInfo.subpassCount = 1;
 		renderPassCreateInfo.pSubpasses = &subpassDescription;
+        renderPassCreateInfo.dependencyCount = 1;
+        renderPassCreateInfo.pDependencies = &dependency;
 
 		vkResult = vkCreateRenderPass(vulkanProgramInfo.GPUDevice,
 									  &renderPassCreateInfo,
@@ -956,7 +1000,7 @@ private:
 		vulkanProgramInfo.swapchainFramebuffers.resize(vulkanProgramInfo.imageViews.size());
 		for (size_t i = 0; i < vulkanProgramInfo.imageViews.size(); i++)
 		{
-			VkImageView attachment[] = 
+			VkImageView attachment[] =
 			{
 				vulkanProgramInfo.imageViews[i]
 			};
@@ -1021,7 +1065,7 @@ private:
 		vkDestroyPipeline(vulkanProgramInfo.GPUDevice,
 						  vulkanProgramInfo.graphicsPipeline,
 						  nullptr);
-		
+
         vkDestroyPipelineLayout(vulkanProgramInfo.GPUDevice,
                                 vulkanProgramInfo.pipelineLayout,
                                 nullptr);
