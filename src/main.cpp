@@ -306,8 +306,6 @@ private:
 
         swapchainCreateInfo.imageFormat = surfaceFormats[0].format;
         swapchainCreateInfo.imageColorSpace = surfaceFormats[0].colorSpace;
-        std::cout << surfaceFormats[0].colorSpace << std::endl;
-        std::cout << surfaceFormats[0].format << std::endl;
 
         // Record swapchain format for later use in render pipeline
         vulkanProgramInfo.vulkanSwapchainFormat = swapchainCreateInfo.imageFormat;
@@ -954,7 +952,7 @@ private:
         attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         // Attachment reference for subpasses
         VkAttachmentReference colorAttachmentRef{};
